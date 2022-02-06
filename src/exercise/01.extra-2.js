@@ -11,9 +11,12 @@ function Counter({initialCount = 0, step = 1}) {
     return newState;
   }
 
-  const [count, setCount] = React.useReducer(countReducer, initialCount)
+  const [state, setState] = React.useReducer(countReducer, {
+    count: initialCount,
+  })
 
-  const increment = () => setCount(count + step)
+  const {count} = state
+  const increment = () => setState({count: count + step})
   return <button onClick={increment}>{count}</button>
 }
 
