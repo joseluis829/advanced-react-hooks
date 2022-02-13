@@ -28,12 +28,12 @@ function asyncReducer(state, action) {
   }
 }
 
-function useAsync(asyncCallback, dependencies) {
-  console.log('dependencies ', dependencies )
+function useAsync(asyncCallback, initialState, dependencies) {
   const [state, dispatch] = React.useReducer(asyncReducer, {
-    status: dependencies && dependencies[0] ? 'pending' : 'idle',
+    status: 'idle',
     data: null,
     error: null,
+    ...initialState,
   })
 
   React.useEffect(() => {
@@ -42,7 +42,7 @@ function useAsync(asyncCallback, dependencies) {
       return
     }
     dispatch({type: 'pending'})
-    asyncCallback().then(
+    promise.then(
       data => {
         dispatch({type: 'resolved', data})
       },
@@ -51,6 +51,7 @@ function useAsync(asyncCallback, dependencies) {
       },
     )
     
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies)
   return state
 }
@@ -63,6 +64,7 @@ function PokemonInfo({pokemonName}) {
       }
       return fetchPokemon(pokemonName)
     },
+    {status: pokemonName ? 'pending' : 'idle'}
     [pokemonName]
   )
   
