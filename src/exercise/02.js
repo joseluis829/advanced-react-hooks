@@ -10,7 +10,6 @@ import {
   PokemonErrorBoundary,
 } from '../pokemon'
 
-// 🐨 this is going to be our generic asyncReducer
 function asyncReducer(state, action) {
   console.log('action ', action )
   switch (action.type) {
