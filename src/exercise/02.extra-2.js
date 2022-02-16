@@ -11,7 +11,6 @@ import {
 } from '../pokemon'
 
 function asyncReducer(state, action) {
-  console.log('action ', action )
   switch (action.type) {
     case 'pending': {
       return {status: 'pending', data: null, error: null}
@@ -28,7 +27,7 @@ function asyncReducer(state, action) {
   }
 }
 
-function useAsync(asyncCallback, initialState, dependencies) {
+function useAsync(initialState) {
   const [state, dispatch] = React.useReducer(asyncReducer, {
     status: 'idle',
     data: null,
@@ -36,40 +35,36 @@ function useAsync(asyncCallback, initialState, dependencies) {
     ...initialState,
   })
 
-  React.useEffect(() => {
-    const promise = asyncCallback()
-    if (!promise) {
-      return
-    }
-    dispatch({type: 'pending'})
-    promise.then(
-      data => {
-        dispatch({type: 'resolved', data})
-      },
-      error => {
-        dispatch({type: 'rejected', error})
-      },
-    )
-    
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, dependencies)
-  return state
+  const run = React.useCallback(
+    (promise) => {
+      dispatch({type: 'pending'})
+      promise.then(
+        data => {
+          dispatch({type: 'resolved', data})
+        },
+        error => {
+          dispatch({type: 'rejected', error})
+        },
+      )
+    },
+    [],
+  )
+
+  return { ...state, run}
 }
 
 function PokemonInfo({pokemonName}) {
-  const state = useAsync(
-    () => {
-      if(!pokemonName) {
-        return
-      }
-      return fetchPokemon(pokemonName)
-    },
-    {status: pokemonName ? 'pending' : 'idle'}
-    [pokemonName]
-  )
-  
-  const {data, status, error} = state
-  console.log('state ', state )
+  const {data: pokemon, status, error, run} = useAsync({
+    status: pokemonName ? 'pending' : 'idle'
+  })
+
+  React.useEffect(() => {
+    if (!pokemonName) {
+      return
+    }
+    const pokemonPromise = fetchPokemon(pokemonName)
+    run(pokemonPromise)
+  }, [pokemonName, run])
 
   switch (status) {
     case 'idle':
@@ -79,7 +74,7 @@ function PokemonInfo({pokemonName}) {
     case 'rejected':
       throw error
     case 'resolved':
-      return <PokemonDataView pokemon={data} />
+      return <PokemonDataView pokemon={pokemon} />
     default:
       throw new Error('This should be impossible')
   }
